@@ -25,6 +25,18 @@ android {
         versionName = "2.21.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // AB fork: separate app id so it installs alongside stock PennyWise.
+        applicationIdSuffix = ".ab"
+
+        // AB fork: Google Sheet sync. Values come from GitHub Actions secrets
+        // (or ~/.gradle/gradle.properties locally). Blank URL = sync switched off.
+        val sheetWebhookUrl = (project.findProperty("SHEET_WEBHOOK_URL") as String?)
+            ?: System.getenv("SHEET_WEBHOOK_URL") ?: ""
+        val sheetToken = (project.findProperty("SHEET_TOKEN") as String?)
+            ?: System.getenv("SHEET_TOKEN") ?: ""
+        buildConfigField("String", "SHEET_WEBHOOK_URL", "\"$sheetWebhookUrl\"")
+        buildConfigField("String", "SHEET_TOKEN", "\"$sheetToken\"")
         
         // Load RSA public key from local.properties
         val localPropertiesFile = rootProject.file("local.properties")

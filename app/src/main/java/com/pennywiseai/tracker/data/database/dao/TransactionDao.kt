@@ -15,6 +15,10 @@ interface TransactionDao {
 
     @Query("SELECT * FROM transactions WHERE id = :transactionId")
     suspend fun getTransactionById(transactionId: Long): TransactionEntity?
+
+    /** AB fork: rows not yet pushed to the Google Sheet, oldest first. */
+    @Query("SELECT * FROM transactions WHERE id > :afterId ORDER BY id ASC LIMIT :limit")
+    suspend fun getTransactionsAfterId(afterId: Long, limit: Int): List<TransactionEntity>
     
     @Query("""
         SELECT * FROM transactions

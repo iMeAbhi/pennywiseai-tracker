@@ -225,6 +225,9 @@ class SmsTransactionProcessor @Inject constructor(
             if (rowId != -1L) {
                 Log.d(TAG, "Saved new transaction with ID: $rowId${if (finalEntity.isRecurring) " (Recurring)" else ""}")
 
+                // AB fork: send it to the Google Sheet in the background.
+                com.pennywiseai.tracker.worker.SheetSyncWorker.enqueueNow(appContext)
+
                 // Save rule applications if any rules were applied. The engine ran
                 // before the insert, so each application still carries the entity's
                 // placeholder id of 0 — remap to the real row id, as the SMS worker

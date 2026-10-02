@@ -381,6 +381,8 @@ class OptimizedSmsReaderWorker @AssistedInject constructor(
                 Log.e(TAG, "Income autopay phantom creator failed: ${e.message}", e)
             }
             reportProgress(stats)
+            // AB fork: push everything this scan saved to the Google Sheet.
+            if (stats.saved.get() > 0) SheetSyncWorker.enqueueNow(applicationContext)
             // WorkManager clears `progress` once work finishes, so a caller
             // reading the result on SUCCEEDED saw every count as 0 — onboarding
             // said "No transactions found" after importing a whole inbox. Hand

@@ -1,0 +1,62 @@
+name: AB Build APK
+
+# Builds AB's fork of PennyWise (with Google Sheet sync) into an installable APK.
+# Download it from the run's "Artifacts" section.
+#
+# Repo secrets used (Settings → Secrets and variables → Actions):
+#   SHEET_WEBHOOK_URL      Apps Script web app URL (blank = sync off)
+#   SHEET_TOKEN            shared secret the Apps Script checks
+#   AB_KEYSTORE_BASE64     signing key, so each new APK installs over the last one
+
+on:
+  push:
+    branches: [ main, sheet-sync ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore signing key
+        env:
+          AB_KEYSTORE_BASE64: ${{ secrets.AB_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p ~/.android
+          if [ -n "$AB_KEYSTORE_BASE64" ]; then
+            echo "$AB_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+            echo "Using saved signing key"
+          else
+            echo "::warning::AB_KEYSTORE_BASE64 not set - APK gets a throwaway key and won't update over an earlier install"
+          fi
+
+      - name: Build APK
+        env:
+          SHEET_WEBHOOK_URL: ${{ secrets.SHEET_WEBHOOK_URL }}
+          SHEET_TOKEN: ${{ secrets.SHEET_TOKEN }}
+        run: |
+          [ -n "$SHEET_WEBHOOK_URL" ] || echo "::warning::SHEET_WEBHOOK_URL not set - this APK won't sync"
+          ./gradlew assembleStandardDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PennyWise-AB-${{ github.run_number }}
+          path: app/build/outputs/apk/standard/debug/*.apk
+          retention-days: 30

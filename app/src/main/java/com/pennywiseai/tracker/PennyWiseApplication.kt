@@ -87,6 +87,10 @@ class PennyWiseApplication : Application(), Configuration.Provider {
         com.pennywiseai.tracker.worker.RecurringTransactionWorker.enqueuePeriodic(this)
         com.pennywiseai.tracker.worker.RecurringTransactionWorker.enqueueOneShotCatchUp(this)
 
+        // AB fork: push transactions to the Google Sheet (hourly safety net + catch-up now).
+        com.pennywiseai.tracker.worker.SheetSyncWorker.enqueuePeriodic(this)
+        com.pennywiseai.tracker.worker.SheetSyncWorker.enqueueNow(this)
+
         // Keep CurrencyFormatter's number-format style in sync with the user's
         // preference. CurrencyFormatter is a stateless object used from non-Compose
         // contexts (widgets, workers) too, so we push the value into its @Volatile
